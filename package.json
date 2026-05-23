@@ -1,7 +1,4 @@
 {
-  "scripts": {
-    "build": "echo ROOT_BUILD_RUNNING && exit 1"
-  },
   "dependencies": {
     "framer-motion": "^12.38.0"
   }
