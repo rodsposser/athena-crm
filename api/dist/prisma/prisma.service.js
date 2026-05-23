@@ -17,7 +17,7 @@ const adapter_pg_1 = require("@prisma/adapter-pg");
 let PrismaService = class PrismaService extends client_1.PrismaClient {
     constructor(config) {
         const connectionString = config.get('DATABASE_URL');
-        const adapter = new adapter_pg_1.PrismaPg({ connectionString });
+        const adapter = new adapter_pg_1.PrismaPg({ connectionString, family: 4 });
         super({ adapter });
     }
     async onModuleInit() {
