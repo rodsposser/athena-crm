@@ -38,4 +38,7 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`CRM API running on http://localhost:${port}`);
 }
-bootstrap();
+bootstrap().catch((err) => {
+  console.error('Fatal startup error:', err);
+  process.exit(1);
+});

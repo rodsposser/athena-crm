@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const envSchema = z.object({
-  DATABASE_URL: z.string().url(),
+  DATABASE_URL: z.string().min(1),
   REDIS_URL: z.string().url().optional(),
   PORT: z.coerce.number().optional(),
   API_PORT: z.coerce.number().default(3333),
