@@ -17,10 +17,12 @@ Thumbs.db
 *.swo
 
 # Build outputs
+# api/dist is committed for pre-built deployment on Render
 dist/
 build/
 .next/
 out/
+!api/dist/
 
 # Prisma generated
 api/generated/

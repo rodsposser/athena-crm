@@ -1,0 +1,432 @@
+import { PrismaService } from '../../prisma/prisma.service';
+import { CreateLeadDto } from './dto/create-lead.dto';
+import { UpdateLeadDto } from './dto/update-lead.dto';
+import { MoveLeadDto } from './dto/move-lead.dto';
+import { AssignLeadDto } from './dto/assign-lead.dto';
+import { BulkMoveDto, BulkAssignDto, BulkDeleteDto } from './dto/bulk-action.dto';
+export declare class LeadsService {
+    private readonly prisma;
+    constructor(prisma: PrismaService);
+    create(orgId: string, userId: string, dto: CreateLeadDto): Promise<{
+        company: {
+            name: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            deletedAt: Date | null;
+            organizationId: string;
+            domain: string | null;
+            industry: string | null;
+            website: string | null;
+        } | null;
+        contact: {
+            name: string;
+            email: string | null;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            deletedAt: Date | null;
+            organizationId: string;
+            companyId: string | null;
+            phone: string | null;
+            jobTitle: string | null;
+        } | null;
+        status: {
+            name: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            color: string;
+            isFinal: boolean;
+            isWon: boolean;
+            isMql: boolean;
+            isMeeting: boolean;
+            staleAfterDays: number | null;
+            isDefault: boolean;
+            position: number;
+            pipelineId: string;
+        };
+        assignee: {
+            name: string;
+            email: string;
+            id: string;
+        } | null;
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date | null;
+        organizationId: string;
+        position: number;
+        pipelineId: string;
+        statusId: string;
+        title: string;
+        estimatedValue: number;
+        priority: import("@prisma/client").$Enums.LeadPriority;
+        temperature: import("@prisma/client").$Enums.LeadTemperature;
+        assigneeId: string | null;
+        probability: number | null;
+        expectedCloseDate: Date | null;
+        lostReason: string | null;
+        version: number;
+        contactId: string | null;
+        companyId: string | null;
+        wonAt: Date | null;
+        lostAt: Date | null;
+        lastActivityAt: Date;
+        lastStatusChangedAt: Date;
+        sourceId: string | null;
+    }>;
+    findByPipeline(orgId: string, pipelineId: string, filters?: {
+        statusId?: string;
+        assigneeId?: string;
+        search?: string;
+        limit?: number;
+        cursor?: string;
+    }): Promise<({
+        company: {
+            name: string;
+            id: string;
+        } | null;
+        contact: {
+            name: string;
+            email: string | null;
+            id: string;
+            phone: string | null;
+        } | null;
+        status: {
+            name: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            color: string;
+            isFinal: boolean;
+            isWon: boolean;
+            isMql: boolean;
+            isMeeting: boolean;
+            staleAfterDays: number | null;
+            isDefault: boolean;
+            position: number;
+            pipelineId: string;
+        };
+        assignee: {
+            name: string;
+            id: string;
+            avatarUrl: string | null;
+        } | null;
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date | null;
+        organizationId: string;
+        position: number;
+        pipelineId: string;
+        statusId: string;
+        title: string;
+        estimatedValue: number;
+        priority: import("@prisma/client").$Enums.LeadPriority;
+        temperature: import("@prisma/client").$Enums.LeadTemperature;
+        assigneeId: string | null;
+        probability: number | null;
+        expectedCloseDate: Date | null;
+        lostReason: string | null;
+        version: number;
+        contactId: string | null;
+        companyId: string | null;
+        wonAt: Date | null;
+        lostAt: Date | null;
+        lastActivityAt: Date;
+        lastStatusChangedAt: Date;
+        sourceId: string | null;
+    })[]>;
+    findOne(orgId: string, id: string): Promise<{
+        pipeline: {
+            name: string;
+            id: string;
+        };
+        company: {
+            name: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            deletedAt: Date | null;
+            organizationId: string;
+            domain: string | null;
+            industry: string | null;
+            website: string | null;
+        } | null;
+        contact: {
+            name: string;
+            email: string | null;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            deletedAt: Date | null;
+            organizationId: string;
+            companyId: string | null;
+            phone: string | null;
+            jobTitle: string | null;
+        } | null;
+        status: {
+            name: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            color: string;
+            isFinal: boolean;
+            isWon: boolean;
+            isMql: boolean;
+            isMeeting: boolean;
+            staleAfterDays: number | null;
+            isDefault: boolean;
+            position: number;
+            pipelineId: string;
+        };
+        assignee: {
+            name: string;
+            email: string;
+            id: string;
+            avatarUrl: string | null;
+        } | null;
+        tags: ({
+            tag: {
+                name: string;
+                id: string;
+                createdAt: Date;
+                updatedAt: Date;
+                organizationId: string;
+                color: string;
+            };
+        } & {
+            createdAt: Date;
+            leadId: string;
+            tagId: string;
+        })[];
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date | null;
+        organizationId: string;
+        position: number;
+        pipelineId: string;
+        statusId: string;
+        title: string;
+        estimatedValue: number;
+        priority: import("@prisma/client").$Enums.LeadPriority;
+        temperature: import("@prisma/client").$Enums.LeadTemperature;
+        assigneeId: string | null;
+        probability: number | null;
+        expectedCloseDate: Date | null;
+        lostReason: string | null;
+        version: number;
+        contactId: string | null;
+        companyId: string | null;
+        wonAt: Date | null;
+        lostAt: Date | null;
+        lastActivityAt: Date;
+        lastStatusChangedAt: Date;
+        sourceId: string | null;
+    }>;
+    update(orgId: string, id: string, dto: UpdateLeadDto): Promise<{
+        company: {
+            name: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            deletedAt: Date | null;
+            organizationId: string;
+            domain: string | null;
+            industry: string | null;
+            website: string | null;
+        } | null;
+        contact: {
+            name: string;
+            email: string | null;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            deletedAt: Date | null;
+            organizationId: string;
+            companyId: string | null;
+            phone: string | null;
+            jobTitle: string | null;
+        } | null;
+        status: {
+            name: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            color: string;
+            isFinal: boolean;
+            isWon: boolean;
+            isMql: boolean;
+            isMeeting: boolean;
+            staleAfterDays: number | null;
+            isDefault: boolean;
+            position: number;
+            pipelineId: string;
+        };
+        assignee: {
+            name: string;
+            email: string;
+            id: string;
+        } | null;
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date | null;
+        organizationId: string;
+        position: number;
+        pipelineId: string;
+        statusId: string;
+        title: string;
+        estimatedValue: number;
+        priority: import("@prisma/client").$Enums.LeadPriority;
+        temperature: import("@prisma/client").$Enums.LeadTemperature;
+        assigneeId: string | null;
+        probability: number | null;
+        expectedCloseDate: Date | null;
+        lostReason: string | null;
+        version: number;
+        contactId: string | null;
+        companyId: string | null;
+        wonAt: Date | null;
+        lostAt: Date | null;
+        lastActivityAt: Date;
+        lastStatusChangedAt: Date;
+        sourceId: string | null;
+    }>;
+    move(orgId: string, id: string, dto: MoveLeadDto): Promise<{
+        company: {
+            name: string;
+            id: string;
+        } | null;
+        contact: {
+            name: string;
+            id: string;
+        } | null;
+        status: {
+            name: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            color: string;
+            isFinal: boolean;
+            isWon: boolean;
+            isMql: boolean;
+            isMeeting: boolean;
+            staleAfterDays: number | null;
+            isDefault: boolean;
+            position: number;
+            pipelineId: string;
+        };
+        assignee: {
+            name: string;
+            id: string;
+        } | null;
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date | null;
+        organizationId: string;
+        position: number;
+        pipelineId: string;
+        statusId: string;
+        title: string;
+        estimatedValue: number;
+        priority: import("@prisma/client").$Enums.LeadPriority;
+        temperature: import("@prisma/client").$Enums.LeadTemperature;
+        assigneeId: string | null;
+        probability: number | null;
+        expectedCloseDate: Date | null;
+        lostReason: string | null;
+        version: number;
+        contactId: string | null;
+        companyId: string | null;
+        wonAt: Date | null;
+        lostAt: Date | null;
+        lastActivityAt: Date;
+        lastStatusChangedAt: Date;
+        sourceId: string | null;
+    }>;
+    assign(orgId: string, id: string, dto: AssignLeadDto): Promise<{
+        status: {
+            name: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            color: string;
+            isFinal: boolean;
+            isWon: boolean;
+            isMql: boolean;
+            isMeeting: boolean;
+            staleAfterDays: number | null;
+            isDefault: boolean;
+            position: number;
+            pipelineId: string;
+        };
+        assignee: {
+            name: string;
+            email: string;
+            id: string;
+        } | null;
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date | null;
+        organizationId: string;
+        position: number;
+        pipelineId: string;
+        statusId: string;
+        title: string;
+        estimatedValue: number;
+        priority: import("@prisma/client").$Enums.LeadPriority;
+        temperature: import("@prisma/client").$Enums.LeadTemperature;
+        assigneeId: string | null;
+        probability: number | null;
+        expectedCloseDate: Date | null;
+        lostReason: string | null;
+        version: number;
+        contactId: string | null;
+        companyId: string | null;
+        wonAt: Date | null;
+        lostAt: Date | null;
+        lastActivityAt: Date;
+        lastStatusChangedAt: Date;
+        sourceId: string | null;
+    }>;
+    remove(orgId: string, id: string): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        deletedAt: Date | null;
+        organizationId: string;
+        position: number;
+        pipelineId: string;
+        statusId: string;
+        title: string;
+        estimatedValue: number;
+        priority: import("@prisma/client").$Enums.LeadPriority;
+        temperature: import("@prisma/client").$Enums.LeadTemperature;
+        assigneeId: string | null;
+        probability: number | null;
+        expectedCloseDate: Date | null;
+        lostReason: string | null;
+        version: number;
+        contactId: string | null;
+        companyId: string | null;
+        wonAt: Date | null;
+        lostAt: Date | null;
+        lastActivityAt: Date;
+        lastStatusChangedAt: Date;
+        sourceId: string | null;
+    }>;
+    bulkMove(orgId: string, dto: BulkMoveDto): Promise<import("@prisma/client").Prisma.BatchPayload>;
+    bulkAssign(orgId: string, dto: BulkAssignDto): Promise<import("@prisma/client").Prisma.BatchPayload>;
+    bulkDelete(orgId: string, dto: BulkDeleteDto): Promise<import("@prisma/client").Prisma.BatchPayload>;
+}
