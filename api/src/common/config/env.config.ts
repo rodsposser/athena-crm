@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url().optional(),
+  PORT: z.coerce.number().optional(),
   API_PORT: z.coerce.number().default(3333),
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
