@@ -1,0 +1,19 @@
+name: Keep Render API Alive
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'  # every 10 minutes
+  workflow_dispatch:         # manual trigger if needed
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping health endpoint
+        run: |
+          status=$(curl -sf -o /dev/null -w "%{http_code}" https://athena-crm-api.onrender.com/health)
+          echo "Health check status: $status"
+          if [ "$status" != "200" ]; then
+            echo "Warning: API returned $status"
+            exit 1
+          fi
