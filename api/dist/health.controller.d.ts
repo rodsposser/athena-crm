@@ -5,7 +5,6 @@ export declare class HealthController {
     check(): Promise<{
         status: string;
         db: string;
-        dbError: string;
         timestamp: string;
     }>;
 }

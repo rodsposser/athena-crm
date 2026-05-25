@@ -10,20 +10,17 @@ export class HealthController {
   @Get()
   async check() {
     let db = 'error';
-    let dbError = '';
     try {
       await this.prisma.$queryRaw`SELECT 1`;
       db = 'ok';
     } catch (err: unknown) {
       db = 'disconnected';
-      dbError = String(err);
       console.error('[Health] DB error:', err);
     }
 
     return {
       status: 'ok',
       db,
-      dbError,
       timestamp: new Date().toISOString(),
     };
   }
