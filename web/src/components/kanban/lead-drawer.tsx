@@ -340,6 +340,7 @@ export function LeadDrawer({ leadId, onClose, onLeadUpdated }: LeadDrawerProps) 
   const isOpen = leadId !== null;
 
   return (
+    <>
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="right" showCloseButton={false} className="w-full sm:max-w-[500px] overflow-y-auto">
         {/* Hidden description for accessibility */}
@@ -674,5 +675,6 @@ export function LeadDrawer({ leadId, onClose, onLeadUpdated }: LeadDrawerProps) 
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
