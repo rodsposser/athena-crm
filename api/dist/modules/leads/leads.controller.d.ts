@@ -135,6 +135,9 @@ export declare class LeadsController {
         lastStatusChangedAt: Date;
         sourceId: string | null;
     })[]>;
+    bulkMove(orgId: string, dto: BulkMoveDto): Promise<import("@prisma/client").Prisma.BatchPayload>;
+    bulkAssign(orgId: string, dto: BulkAssignDto): Promise<import("@prisma/client").Prisma.BatchPayload>;
+    bulkDelete(orgId: string, dto: BulkDeleteDto): Promise<import("@prisma/client").Prisma.BatchPayload>;
     findOne(orgId: string, id: string): Promise<{
         pipeline: {
             name: string;
@@ -421,7 +424,4 @@ export declare class LeadsController {
         lastStatusChangedAt: Date;
         sourceId: string | null;
     }>;
-    bulkMove(orgId: string, dto: BulkMoveDto): Promise<import("@prisma/client").Prisma.BatchPayload>;
-    bulkAssign(orgId: string, dto: BulkAssignDto): Promise<import("@prisma/client").Prisma.BatchPayload>;
-    bulkDelete(orgId: string, dto: BulkDeleteDto): Promise<import("@prisma/client").Prisma.BatchPayload>;
 }

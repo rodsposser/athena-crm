@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Search, LayoutGrid, List } from 'lucide-react';
@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectTrigger,
-  SelectValue,
   SelectContent,
   SelectItem,
 } from '@/components/ui/select';
@@ -31,11 +30,6 @@ interface Pipeline {
   id: string;
   name: string;
   statuses: Status[];
-}
-
-interface Assignee {
-  id: string;
-  name: string;
 }
 
 interface Member {
@@ -95,16 +89,7 @@ export default function ListPage() {
     }).catch(() => {});
   }, []);
 
-  // Extract unique assignees from leads for the filter dropdown
-  const assignees = useMemo(() => {
-    const map = new Map<string, Assignee>();
-    leads.forEach((lead) => {
-      if (lead.assignee) {
-        map.set(lead.assignee.id, { id: lead.assignee.id, name: lead.assignee.name });
-      }
-    });
-    return Array.from(map.values());
-  }, [leads]);
+  const assignees = members;
 
   const statuses = pipeline?.statuses.slice().sort((a, b) => a.position - b.position) ?? [];
 

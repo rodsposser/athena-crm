@@ -39,6 +39,15 @@ let LeadsController = class LeadsController {
             cursor,
         });
     }
+    bulkMove(orgId, dto) {
+        return this.service.bulkMove(orgId, dto);
+    }
+    bulkAssign(orgId, dto) {
+        return this.service.bulkAssign(orgId, dto);
+    }
+    bulkDelete(orgId, dto) {
+        return this.service.bulkDelete(orgId, dto);
+    }
     findOne(orgId, id) {
         return this.service.findOne(orgId, id);
     }
@@ -53,15 +62,6 @@ let LeadsController = class LeadsController {
     }
     remove(orgId, id) {
         return this.service.remove(orgId, id);
-    }
-    bulkMove(orgId, dto) {
-        return this.service.bulkMove(orgId, dto);
-    }
-    bulkAssign(orgId, dto) {
-        return this.service.bulkAssign(orgId, dto);
-    }
-    bulkDelete(orgId, dto) {
-        return this.service.bulkDelete(orgId, dto);
     }
 };
 exports.LeadsController = LeadsController;
@@ -88,6 +88,30 @@ __decorate([
     __metadata("design:paramtypes", [String, String, String, String, String, String, String]),
     __metadata("design:returntype", void 0)
 ], LeadsController.prototype, "findByPipeline", null);
+__decorate([
+    (0, common_1.Patch)('leads/bulk/move'),
+    __param(0, (0, current_user_decorator_1.CurrentOrg)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, bulk_action_dto_1.BulkMoveDto]),
+    __metadata("design:returntype", void 0)
+], LeadsController.prototype, "bulkMove", null);
+__decorate([
+    (0, common_1.Patch)('leads/bulk/assign'),
+    __param(0, (0, current_user_decorator_1.CurrentOrg)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, bulk_action_dto_1.BulkAssignDto]),
+    __metadata("design:returntype", void 0)
+], LeadsController.prototype, "bulkAssign", null);
+__decorate([
+    (0, common_1.Patch)('leads/bulk/delete'),
+    __param(0, (0, current_user_decorator_1.CurrentOrg)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, bulk_action_dto_1.BulkDeleteDto]),
+    __metadata("design:returntype", void 0)
+], LeadsController.prototype, "bulkDelete", null);
 __decorate([
     (0, common_1.Get)('leads/:id'),
     __param(0, (0, current_user_decorator_1.CurrentOrg)()),
@@ -132,30 +156,6 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", void 0)
 ], LeadsController.prototype, "remove", null);
-__decorate([
-    (0, common_1.Patch)('leads/bulk/move'),
-    __param(0, (0, current_user_decorator_1.CurrentOrg)()),
-    __param(1, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, bulk_action_dto_1.BulkMoveDto]),
-    __metadata("design:returntype", void 0)
-], LeadsController.prototype, "bulkMove", null);
-__decorate([
-    (0, common_1.Patch)('leads/bulk/assign'),
-    __param(0, (0, current_user_decorator_1.CurrentOrg)()),
-    __param(1, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, bulk_action_dto_1.BulkAssignDto]),
-    __metadata("design:returntype", void 0)
-], LeadsController.prototype, "bulkAssign", null);
-__decorate([
-    (0, common_1.Patch)('leads/bulk/delete'),
-    __param(0, (0, current_user_decorator_1.CurrentOrg)()),
-    __param(1, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, bulk_action_dto_1.BulkDeleteDto]),
-    __metadata("design:returntype", void 0)
-], LeadsController.prototype, "bulkDelete", null);
 exports.LeadsController = LeadsController = __decorate([
     (0, common_1.Controller)(),
     __metadata("design:paramtypes", [leads_service_1.LeadsService])

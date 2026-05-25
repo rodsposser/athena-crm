@@ -53,6 +53,22 @@ export class LeadsController {
     });
   }
 
+  // Bulk routes must come before /:id routes to avoid param capture
+  @Patch('leads/bulk/move')
+  bulkMove(@CurrentOrg() orgId: string, @Body() dto: BulkMoveDto) {
+    return this.service.bulkMove(orgId, dto);
+  }
+
+  @Patch('leads/bulk/assign')
+  bulkAssign(@CurrentOrg() orgId: string, @Body() dto: BulkAssignDto) {
+    return this.service.bulkAssign(orgId, dto);
+  }
+
+  @Patch('leads/bulk/delete')
+  bulkDelete(@CurrentOrg() orgId: string, @Body() dto: BulkDeleteDto) {
+    return this.service.bulkDelete(orgId, dto);
+  }
+
   @Get('leads/:id')
   findOne(@CurrentOrg() orgId: string, @Param('id') id: string) {
     return this.service.findOne(orgId, id);
@@ -89,20 +105,5 @@ export class LeadsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@CurrentOrg() orgId: string, @Param('id') id: string) {
     return this.service.remove(orgId, id);
-  }
-
-  @Patch('leads/bulk/move')
-  bulkMove(@CurrentOrg() orgId: string, @Body() dto: BulkMoveDto) {
-    return this.service.bulkMove(orgId, dto);
-  }
-
-  @Patch('leads/bulk/assign')
-  bulkAssign(@CurrentOrg() orgId: string, @Body() dto: BulkAssignDto) {
-    return this.service.bulkAssign(orgId, dto);
-  }
-
-  @Patch('leads/bulk/delete')
-  bulkDelete(@CurrentOrg() orgId: string, @Body() dto: BulkDeleteDto) {
-    return this.service.bulkDelete(orgId, dto);
   }
 }

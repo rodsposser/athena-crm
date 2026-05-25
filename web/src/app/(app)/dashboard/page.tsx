@@ -11,7 +11,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select';
 import { BarChart } from '@/components/ui/bar-chart';
 import { BarList } from '@/components/ui/bar-list';
@@ -238,7 +237,9 @@ export default function DashboardPage() {
             onValueChange={(v) => setSelectedPipeline(v as string)}
           >
             <SelectTrigger className="w-48">
-              <SelectValue />
+              <span className="text-sm">
+                {pipelines.find((p) => p.id === selectedPipeline)?.name ?? 'Pipeline'}
+              </span>
             </SelectTrigger>
             <SelectContent>
               {pipelines.map((p) => (
@@ -255,7 +256,7 @@ export default function DashboardPage() {
             onValueChange={(v) => setPeriod(v as Period)}
           >
             <SelectTrigger className="w-36">
-              <SelectValue />
+              <span className="text-sm">{PERIOD_LABELS[period]}</span>
             </SelectTrigger>
             <SelectContent>
               {(Object.keys(PERIOD_LABELS) as Period[]).map((key) => (
