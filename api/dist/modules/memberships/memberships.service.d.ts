@@ -5,6 +5,7 @@ export declare class MembershipsService {
     constructor(prisma: PrismaService);
     listMembers(orgId: string): Promise<{
         id: string;
+        userId: string;
         role: import("@prisma/client").$Enums.MembershipRole;
         name: string;
         email: string;

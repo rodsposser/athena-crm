@@ -17,6 +17,7 @@ import {
   SelectItem,
 } from '@/components/ui/select';
 import { LeadsTable, type Lead } from '@/components/list-view/leads-table';
+import { LeadDrawer } from '@/components/kanban/lead-drawer';
 import api from '@/lib/api';
 
 interface Status {
@@ -37,13 +38,20 @@ interface Assignee {
   name: string;
 }
 
+interface Member {
+  id: string;
+  name: string;
+}
+
 export default function ListPage() {
   const params = useParams<{ pipelineId: string }>();
   const pipelineId = params.pipelineId;
 
   const [pipeline, setPipeline] = useState<Pipeline | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openLeadId, setOpenLeadId] = useState<string | null>(null);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -80,6 +88,13 @@ export default function ListPage() {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    api.get('/members').then((res) => {
+      const data: Array<{ userId: string; name: string }> = res.data?.data ?? res.data ?? [];
+      setMembers(data.map((m) => ({ id: m.userId, name: m.name })));
+    }).catch(() => {});
+  }, []);
+
   // Extract unique assignees from leads for the filter dropdown
   const assignees = useMemo(() => {
     const map = new Map<string, Assignee>();
@@ -90,6 +105,8 @@ export default function ListPage() {
     });
     return Array.from(map.values());
   }, [leads]);
+
+  const statuses = pipeline?.statuses.slice().sort((a, b) => a.position - b.position) ?? [];
 
   if (loading) {
     return (
@@ -147,17 +164,15 @@ export default function ListPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="__all__">Todos os status</SelectItem>
-            {pipeline.statuses
-              .sort((a, b) => a.position - b.position)
-              .map((status) => (
-                <SelectItem key={status.id} value={status.id}>
-                  <span
-                    className="mr-1.5 inline-block size-2.5 rounded-full"
-                    style={{ backgroundColor: status.color }}
-                  />
-                  {status.name}
-                </SelectItem>
-              ))}
+            {statuses.map((status) => (
+              <SelectItem key={status.id} value={status.id}>
+                <span
+                  className="mr-1.5 inline-block size-2.5 rounded-full"
+                  style={{ backgroundColor: status.color }}
+                />
+                {status.name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
@@ -177,7 +192,20 @@ export default function ListPage() {
       </div>
 
       {/* Table */}
-      <LeadsTable leads={leads} />
+      <LeadsTable
+        leads={leads}
+        statuses={statuses}
+        members={members}
+        onRefresh={fetchData}
+        onOpenLead={setOpenLeadId}
+      />
+
+      {/* Lead drawer */}
+      <LeadDrawer
+        leadId={openLeadId}
+        onClose={() => setOpenLeadId(null)}
+        onLeadUpdated={fetchData}
+      />
     </div>
   );
 }

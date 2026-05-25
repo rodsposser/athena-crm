@@ -32,6 +32,7 @@ export class MembershipsService {
 
     return memberships.map((m) => ({
       id: m.id,
+      userId: m.userId,
       role: m.role,
       name: m.user.name,
       email: m.user.email,

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Trash2, UserPlus, ArrowRightCircle } from 'lucide-react';
+import { Trash2, UserPlus, ArrowRightCircle, Check } from 'lucide-react';
+import { toast } from 'sonner';
 import {
   Table,
   TableHeader,
@@ -16,8 +17,16 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { formatCurrency } from '@/lib/format';
 import { SortableTableHeader, type SortDirection } from './table-header';
+import api from '@/lib/api';
 
 export interface Lead {
   id: string;
@@ -32,8 +41,23 @@ export interface Lead {
   company?: { name: string } | null;
 }
 
+interface Status {
+  id: string;
+  name: string;
+  color: string;
+}
+
+interface Member {
+  id: string;
+  name: string;
+}
+
 interface LeadsTableProps {
   leads: Lead[];
+  statuses?: Status[];
+  members?: Member[];
+  onRefresh?: () => void;
+  onOpenLead?: (leadId: string) => void;
 }
 
 function getInitials(name: string): string {
@@ -70,10 +94,54 @@ function getNestedValue(obj: Record<string, any>, path: string): any {
   return path.split('.').reduce((acc, key) => acc?.[key], obj);
 }
 
-export function LeadsTable({ leads }: LeadsTableProps) {
+function ActionMenu({
+  open,
+  onClose,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        onClose();
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      ref={ref}
+      className="absolute bottom-full mb-2 left-0 z-50 min-w-48 rounded-md border bg-popover p-1 shadow-md"
+    >
+      {children}
+    </div>
+  );
+}
+
+export function LeadsTable({
+  leads,
+  statuses = [],
+  members = [],
+  onRefresh,
+  onOpenLead,
+}: LeadsTableProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<SortDirection>(null);
+  const [moveMenuOpen, setMoveMenuOpen] = useState(false);
+  const [assignMenuOpen, setAssignMenuOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isActioning, setIsActioning] = useState(false);
 
   const allSelected = leads.length > 0 && selectedIds.size === leads.length;
   const someSelected = selectedIds.size > 0 && !allSelected;
@@ -110,6 +178,51 @@ export function LeadsTable({ leads }: LeadsTableProps) {
       }
       return next;
     });
+  }
+
+  async function handleBulkMove(statusId: string) {
+    setMoveMenuOpen(false);
+    setIsActioning(true);
+    try {
+      await api.patch('/leads/bulk/move', { leadIds: [...selectedIds], statusId });
+      toast.success('Leads movidos com sucesso');
+      setSelectedIds(new Set());
+      onRefresh?.();
+    } catch {
+      toast.error('Erro ao mover leads');
+    } finally {
+      setIsActioning(false);
+    }
+  }
+
+  async function handleBulkAssign(assigneeId: string | null) {
+    setAssignMenuOpen(false);
+    setIsActioning(true);
+    try {
+      await api.patch('/leads/bulk/assign', { leadIds: [...selectedIds], assigneeId });
+      toast.success('Leads atribuídos com sucesso');
+      setSelectedIds(new Set());
+      onRefresh?.();
+    } catch {
+      toast.error('Erro ao atribuir leads');
+    } finally {
+      setIsActioning(false);
+    }
+  }
+
+  async function handleBulkDelete() {
+    setDeleteDialogOpen(false);
+    setIsActioning(true);
+    try {
+      await api.patch('/leads/bulk/delete', { leadIds: [...selectedIds] });
+      toast.success(`${selectedIds.size} lead${selectedIds.size > 1 ? 's' : ''} excluído${selectedIds.size > 1 ? 's' : ''}`);
+      setSelectedIds(new Set());
+      onRefresh?.();
+    } catch {
+      toast.error('Erro ao excluir leads');
+    } finally {
+      setIsActioning(false);
+    }
   }
 
   const sortedLeads = useMemo(() => {
@@ -217,7 +330,7 @@ export function LeadsTable({ leads }: LeadsTableProps) {
                 key={lead.id}
                 data-state={selectedIds.has(lead.id) ? 'selected' : undefined}
                 className="cursor-pointer"
-                onClick={() => console.log('Open lead detail:', lead.id)}
+                onClick={() => onOpenLead?.(lead.id)}
               >
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <Checkbox
@@ -299,20 +412,103 @@ export function LeadsTable({ leads }: LeadsTableProps) {
             {selectedIds.size} selecionado{selectedIds.size > 1 ? 's' : ''}
           </span>
           <div className="h-4 w-px bg-border" />
-          <Button variant="outline" size="sm" onClick={() => console.log('Move to...', [...selectedIds])}>
-            <ArrowRightCircle className="mr-1.5 size-4" />
-            Mover para...
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => console.log('Assign to...', [...selectedIds])}>
-            <UserPlus className="mr-1.5 size-4" />
-            Atribuir a...
-          </Button>
-          <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => console.log('Delete', [...selectedIds])}>
+
+          {/* Mover para */}
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isActioning || statuses.length === 0}
+              onClick={() => { setMoveMenuOpen((v) => !v); setAssignMenuOpen(false); }}
+            >
+              <ArrowRightCircle className="mr-1.5 size-4" />
+              Mover para...
+            </Button>
+            <ActionMenu open={moveMenuOpen} onClose={() => setMoveMenuOpen(false)}>
+              {statuses.map((status) => (
+                <button
+                  key={status.id}
+                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+                  onClick={() => handleBulkMove(status.id)}
+                >
+                  <span
+                    className="inline-block size-2.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: status.color }}
+                  />
+                  {status.name}
+                </button>
+              ))}
+            </ActionMenu>
+          </div>
+
+          {/* Atribuir a */}
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isActioning}
+              onClick={() => { setAssignMenuOpen((v) => !v); setMoveMenuOpen(false); }}
+            >
+              <UserPlus className="mr-1.5 size-4" />
+              Atribuir a...
+            </Button>
+            <ActionMenu open={assignMenuOpen} onClose={() => setAssignMenuOpen(false)}>
+              <button
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent"
+                onClick={() => handleBulkAssign(null)}
+              >
+                <Check className="size-4 opacity-0" />
+                Sem responsável
+              </button>
+              {members.map((member) => (
+                <button
+                  key={member.id}
+                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent"
+                  onClick={() => handleBulkAssign(member.id)}
+                >
+                  <Avatar size="sm">
+                    <AvatarFallback className="text-xs">{getInitials(member.name)}</AvatarFallback>
+                  </Avatar>
+                  {member.name}
+                </button>
+              ))}
+            </ActionMenu>
+          </div>
+
+          {/* Excluir */}
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isActioning}
+            className="text-destructive hover:text-destructive"
+            onClick={() => setDeleteDialogOpen(true)}
+          >
             <Trash2 className="mr-1.5 size-4" />
             Excluir
           </Button>
         </div>
       )}
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir leads</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir {selectedIds.size} lead{selectedIds.size > 1 ? 's' : ''}?
+              Essa ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-2">
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleBulkDelete}>
+              Excluir
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
