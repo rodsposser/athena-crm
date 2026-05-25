@@ -11,6 +11,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from '@/components/ui/select';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 
@@ -22,6 +28,8 @@ interface CreateLeadDialogProps {
   onCreated: () => void;
 }
 
+const BILLING_MODES = ['Mensal', 'Trimestral', 'Semestral', 'Anual', 'Avulso'];
+
 export function CreateLeadDialog({
   open,
   onOpenChange,
@@ -30,28 +38,50 @@ export function CreateLeadDialog({
   onCreated,
 }: CreateLeadDialogProps) {
   const [loading, setLoading] = useState(false);
-  const [title, setTitle] = useState('');
-  const [contactName, setContactName] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [contactName, setContactName] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
   const [estimatedValue, setEstimatedValue] = useState('');
+  const [billingMode, setBillingMode] = useState('');
+
+  function reset() {
+    setCompanyName('');
+    setContactName('');
+    setContactPhone('');
+    setEstimatedValue('');
+    setBillingMode('');
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!companyName.trim() && !contactName.trim()) {
+      toast.error('Informe ao menos o nome da empresa ou do contato');
+      return;
+    }
+
+    const title = companyName.trim() || contactName.trim();
 
     setLoading(true);
     try {
-      await api.post(`/pipelines/${pipelineId}/leads`, {
-        title: title.trim(),
+      const res = await api.post(`/pipelines/${pipelineId}/leads`, {
+        title,
         contactName: contactName.trim() || undefined,
+        contactPhone: contactPhone.trim() || undefined,
         companyName: companyName.trim() || undefined,
         estimatedValue: estimatedValue ? Math.round(parseFloat(estimatedValue) * 100) : undefined,
         statusId,
       });
-      setTitle('');
-      setContactName('');
-      setCompanyName('');
-      setEstimatedValue('');
+
+      const newLeadId = res.data?.data?.id;
+
+      if (billingMode && newLeadId) {
+        await api.post(`/leads/${newLeadId}/notes`, {
+          content: `Modo de cobrança: ${billingMode}`,
+          isPinned: true,
+        });
+      }
+
+      reset();
       onOpenChange(false);
       onCreated();
       toast.success('Lead criado com sucesso');
@@ -62,21 +92,22 @@ export function CreateLeadDialog({
     }
   }
 
+  const canSubmit = (companyName.trim() || contactName.trim()) && !loading;
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Novo Lead</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">Titulo *</Label>
+            <Label htmlFor="companyName">Nome da empresa *</Label>
             <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex: Projeto Website"
-              required
+              id="companyName"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder="Ex: Escritório Silva Advogados"
             />
           </div>
           <div className="space-y-2">
@@ -85,20 +116,21 @@ export function CreateLeadDialog({
               id="contactName"
               value={contactName}
               onChange={(e) => setContactName(e.target.value)}
-              placeholder="Ex: Maria Silva"
+              placeholder="Ex: Dr. João Silva"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="companyName">Empresa</Label>
+            <Label htmlFor="contactPhone">Telefone</Label>
             <Input
-              id="companyName"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="Ex: Acme Corp"
+              id="contactPhone"
+              type="tel"
+              value={contactPhone}
+              onChange={(e) => setContactPhone(e.target.value)}
+              placeholder="Ex: (51) 99999-9999"
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="estimatedValue">Valor estimado (R$)</Label>
+            <Label htmlFor="estimatedValue">Média de contrato/mês (R$)</Label>
             <Input
               id="estimatedValue"
               type="number"
@@ -106,14 +138,31 @@ export function CreateLeadDialog({
               min="0"
               value={estimatedValue}
               onChange={(e) => setEstimatedValue(e.target.value)}
-              placeholder="Ex: 5000.00"
+              placeholder="Ex: 2500.00"
             />
           </div>
+          <div className="space-y-2">
+            <Label>Modo de cobrança</Label>
+            <Select value={billingMode} onValueChange={(v) => setBillingMode(v as string)}>
+              <SelectTrigger>
+                <span className={!billingMode ? 'text-muted-foreground text-sm' : 'text-sm'}>
+                  {billingMode || 'Selecionar...'}
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                {BILLING_MODES.map((mode) => (
+                  <SelectItem key={mode} value={mode}>
+                    {mode}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => { reset(); onOpenChange(false); }}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading || !title.trim()}>
+            <Button type="submit" disabled={!canSubmit}>
               {loading ? 'Criando...' : 'Criar Lead'}
             </Button>
           </DialogFooter>
