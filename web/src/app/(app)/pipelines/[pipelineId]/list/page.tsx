@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Search, LayoutGrid, List } from 'lucide-react';
@@ -32,7 +32,7 @@ interface Pipeline {
   statuses: Status[];
 }
 
-interface Member {
+interface Assignee {
   id: string;
   name: string;
 }
@@ -43,7 +43,9 @@ export default function ListPage() {
 
   const [pipeline, setPipeline] = useState<Pipeline | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [members, setMembers] = useState<Member[]>([]);
+  // Stable list of assignees derived from the initial (unfiltered) load
+  const [allAssignees, setAllAssignees] = useState<Assignee[]>([]);
+  const assigneesLoaded = useRef(false);
   const [loading, setLoading] = useState(true);
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
 
@@ -70,7 +72,21 @@ export default function ListPage() {
         (p) => p.id === pipelineId,
       );
       if (found) setPipeline(found);
-      setLeads(leadsRes.data.data);
+
+      const fetchedLeads: Lead[] = leadsRes.data.data;
+      setLeads(fetchedLeads);
+
+      // Build assignee list from the first unfiltered load only
+      if (!assigneesLoaded.current && !search && statusFilter === '__all__' && assigneeFilter === '__all__') {
+        const map = new Map<string, Assignee>();
+        fetchedLeads.forEach((lead) => {
+          if (lead.assignee) {
+            map.set(lead.assignee.id, { id: lead.assignee.id, name: lead.assignee.name });
+          }
+        });
+        setAllAssignees(Array.from(map.values()));
+        assigneesLoaded.current = true;
+      }
     } catch (err) {
       console.error('Failed to fetch list data:', err);
     } finally {
@@ -81,15 +97,6 @@ export default function ListPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  useEffect(() => {
-    api.get('/members').then((res) => {
-      const data: Array<{ userId: string; name: string }> = res.data?.data ?? res.data ?? [];
-      setMembers(data.map((m) => ({ id: m.userId, name: m.name })));
-    }).catch(() => {});
-  }, []);
-
-  const assignees = members;
 
   const statuses = pipeline?.statuses.slice().sort((a, b) => a.position - b.position) ?? [];
 
@@ -170,12 +177,12 @@ export default function ListPage() {
             <span className={assigneeFilter === '__all__' ? 'text-muted-foreground text-sm' : 'text-sm'}>
               {assigneeFilter === '__all__'
                 ? 'Todos os responsaveis'
-                : assignees.find((a) => a.id === assigneeFilter)?.name ?? 'Todos os responsaveis'}
+                : allAssignees.find((a) => a.id === assigneeFilter)?.name ?? 'Todos os responsaveis'}
             </span>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="__all__">Todos os responsaveis</SelectItem>
-            {assignees.map((assignee) => (
+            {allAssignees.map((assignee) => (
               <SelectItem key={assignee.id} value={assignee.id}>
                 {assignee.name}
               </SelectItem>
@@ -188,7 +195,7 @@ export default function ListPage() {
       <LeadsTable
         leads={leads}
         statuses={statuses}
-        members={members}
+        members={allAssignees}
         onRefresh={fetchData}
         onOpenLead={setOpenLeadId}
       />
