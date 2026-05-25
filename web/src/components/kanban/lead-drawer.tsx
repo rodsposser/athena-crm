@@ -10,15 +10,24 @@ import {
   Pencil,
   Plus,
   Tag,
+  Trash2,
   UserPlus,
   X,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import api from '@/lib/api';
 import { formatCurrency } from '@/lib/format';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -146,6 +155,7 @@ export function LeadDrawer({ leadId, onClose, onLeadUpdated }: LeadDrawerProps) 
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(false);
   const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Inline title editing
   const [editingTitle, setEditingTitle] = useState(false);
@@ -234,6 +244,21 @@ export function LeadDrawer({ leadId, onClose, onLeadUpdated }: LeadDrawerProps) 
     },
     [lead, onLeadUpdated],
   );
+
+  // ------ Delete handler ------
+
+  const handleDelete = useCallback(async () => {
+    if (!lead) return;
+    try {
+      await api.delete(`/leads/${lead.id}`);
+      toast.success('Lead excluído');
+      setDeleteDialogOpen(false);
+      onLeadUpdated();
+      onClose();
+    } catch {
+      toast.error('Erro ao excluir lead');
+    }
+  }, [lead, onLeadUpdated, onClose]);
 
   // ------ Tag handlers ------
 
@@ -362,10 +387,21 @@ export function LeadDrawer({ leadId, onClose, onLeadUpdated }: LeadDrawerProps) 
                 </div>
               </div>
 
-              <Button variant="ghost" size="icon-sm" onClick={onClose}>
-                <X className="size-4" />
-                <span className="sr-only">Fechar</span>
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="text-muted-foreground hover:text-destructive"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="size-4" />
+                  <span className="sr-only">Excluir lead</span>
+                </Button>
+                <Button variant="ghost" size="icon-sm" onClick={onClose}>
+                  <X className="size-4" />
+                  <span className="sr-only">Fechar</span>
+                </Button>
+              </div>
             </SheetHeader>
 
             {/* Tags */}
@@ -619,5 +655,24 @@ export function LeadDrawer({ leadId, onClose, onLeadUpdated }: LeadDrawerProps) 
         )}
       </SheetContent>
     </Sheet>
+
+    <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Excluir lead</DialogTitle>
+          <DialogDescription>
+            Tem certeza que deseja excluir "{lead?.title}"? Essa ação não pode ser desfeita.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex justify-end gap-2 mt-2">
+          <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+            Cancelar
+          </Button>
+          <Button variant="destructive" onClick={handleDelete}>
+            Excluir
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

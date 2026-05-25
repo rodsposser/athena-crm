@@ -160,7 +160,11 @@ export default function ListPage() {
 
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v ?? '__all__')}>
           <SelectTrigger className="w-45">
-            <SelectValue placeholder="Todos os status" />
+            <span className={statusFilter === '__all__' ? 'text-muted-foreground text-sm' : 'text-sm'}>
+              {statusFilter === '__all__'
+                ? 'Todos os status'
+                : statuses.find((s) => s.id === statusFilter)?.name ?? 'Todos os status'}
+            </span>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="__all__">Todos os status</SelectItem>
@@ -178,7 +182,11 @@ export default function ListPage() {
 
         <Select value={assigneeFilter} onValueChange={(v) => setAssigneeFilter(v ?? '__all__')}>
           <SelectTrigger className="w-45">
-            <SelectValue placeholder="Todos os responsaveis" />
+            <span className={assigneeFilter === '__all__' ? 'text-muted-foreground text-sm' : 'text-sm'}>
+              {assigneeFilter === '__all__'
+                ? 'Todos os responsaveis'
+                : assignees.find((a) => a.id === assigneeFilter)?.name ?? 'Todos os responsaveis'}
+            </span>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="__all__">Todos os responsaveis</SelectItem>
