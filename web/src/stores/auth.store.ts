@@ -3,6 +3,7 @@ import { create } from 'zustand';
 interface AuthUser {
   id: string;
   email: string;
+  name: string | null;
 }
 
 interface AuthOrg {
@@ -24,6 +25,15 @@ interface AuthState {
   }) => void;
   logout: () => void;
   hydrate: () => void;
+}
+
+function isTokenExpired(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return Date.now() >= payload.exp * 1000;
+  } catch {
+    return true;
+  }
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -67,14 +77,23 @@ export const useAuthStore = create<AuthState>((set) => ({
     const userStr = localStorage.getItem('user');
     const orgStr = localStorage.getItem('organization');
 
-    if (accessToken && refreshToken && userStr && orgStr) {
-      set({
-        accessToken,
-        refreshToken,
-        user: JSON.parse(userStr),
-        organization: JSON.parse(orgStr),
-        isAuthenticated: true,
-      });
+    if (!accessToken || !refreshToken || !userStr || !orgStr) return;
+
+    // Clear if refresh token is also expired — force re-login
+    if (isTokenExpired(refreshToken)) {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      localStorage.removeItem('organization');
+      return;
     }
+
+    set({
+      accessToken,
+      refreshToken,
+      user: JSON.parse(userStr),
+      organization: JSON.parse(orgStr),
+      isAuthenticated: true,
+    });
   },
 }));

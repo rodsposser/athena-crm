@@ -17,6 +17,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
 import api from '@/lib/api';
 
 interface Pipeline {
@@ -41,7 +42,7 @@ export function Sidebar() {
     api
       .get('/pipelines')
       .then((res) => setPipelines(res.data.data))
-      .catch(() => {});
+      .catch(() => toast.error('Erro ao carregar pipelines'));
   }, []);
 
   function handleLogout() {

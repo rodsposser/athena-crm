@@ -15,6 +15,7 @@ import {
   type DragEndEvent,
   type DragOverEvent,
 } from '@dnd-kit/core';
+import { toast } from 'sonner';
 import api from '@/lib/api';
 import { DroppableColumn } from './droppable-column';
 import { LeadCard, type Lead } from './lead-card';
@@ -146,9 +147,9 @@ export function KanbanBoard({
           statusId: targetStatusId,
         });
         onRefresh();
-      } catch (err) {
-        console.error('Failed to move lead:', err);
-        onRefresh(); // revert by re-fetching
+      } catch {
+        toast.error('Erro ao mover lead');
+        onRefresh();
       }
     },
     [leads, sortedStatuses, onRefresh],

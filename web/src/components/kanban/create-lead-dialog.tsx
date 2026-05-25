@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import api from '@/lib/api';
 
 interface CreateLeadDialogProps {
@@ -53,8 +54,9 @@ export function CreateLeadDialog({
       setEstimatedValue('');
       onOpenChange(false);
       onCreated();
-    } catch (err) {
-      console.error('Failed to create lead:', err);
+      toast.success('Lead criado com sucesso');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Erro ao criar lead');
     } finally {
       setLoading(false);
     }
