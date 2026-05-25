@@ -16,6 +16,7 @@ export declare class AuthService {
         user: {
             id: string;
             email: string;
+            name: string | null;
         };
         organization: {
             id: string;
@@ -28,6 +29,7 @@ export declare class AuthService {
         user: {
             id: string;
             email: string;
+            name: string | null;
         };
         organization: {
             id: string;
@@ -40,6 +42,7 @@ export declare class AuthService {
         user: {
             id: string;
             email: string;
+            name: string | null;
         };
         organization: {
             id: string;

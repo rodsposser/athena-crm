@@ -96,6 +96,7 @@ let AuthService = AuthService_1 = class AuthService {
         return this.generateTokens({
             sub: result.user.id,
             email: result.user.email,
+            name: result.user.name,
             orgId: result.org.id,
             role: 'OWNER',
         });
@@ -128,6 +129,7 @@ let AuthService = AuthService_1 = class AuthService {
         return this.generateTokens({
             sub: user.id,
             email: user.email,
+            name: user.name,
             orgId: membership.organizationId,
             role: membership.role,
         });
@@ -146,6 +148,7 @@ let AuthService = AuthService_1 = class AuthService {
             return this.generateTokens({
                 sub: payload.sub,
                 email: payload.email,
+                name: user.name,
                 orgId: payload.orgId,
                 role: payload.role,
             });
@@ -206,6 +209,7 @@ let AuthService = AuthService_1 = class AuthService {
             user: {
                 id: payload.sub,
                 email: payload.email,
+                name: payload.name ?? null,
             },
             organization: {
                 id: payload.orgId,

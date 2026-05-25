@@ -13,6 +13,7 @@ export declare class AuthController {
         user: {
             id: string;
             email: string;
+            name: string | null;
         };
         organization: {
             id: string;
@@ -25,6 +26,7 @@ export declare class AuthController {
         user: {
             id: string;
             email: string;
+            name: string | null;
         };
         organization: {
             id: string;
@@ -37,6 +39,7 @@ export declare class AuthController {
         user: {
             id: string;
             email: string;
+            name: string | null;
         };
         organization: {
             id: string;

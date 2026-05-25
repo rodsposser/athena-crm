@@ -17,6 +17,7 @@ import { LoginDto } from './dto/login.dto';
 interface TokenPayload {
   sub: string;
   email: string;
+  name?: string;
   orgId: string;
   role: string;
 }
@@ -78,6 +79,7 @@ export class AuthService {
     return this.generateTokens({
       sub: result.user.id,
       email: result.user.email,
+      name: result.user.name,
       orgId: result.org.id,
       role: 'OWNER',
     });
@@ -116,6 +118,7 @@ export class AuthService {
     return this.generateTokens({
       sub: user.id,
       email: user.email,
+      name: user.name,
       orgId: membership.organizationId,
       role: membership.role,
     });
@@ -137,6 +140,7 @@ export class AuthService {
       return this.generateTokens({
         sub: payload.sub,
         email: payload.email,
+        name: user.name,
         orgId: payload.orgId,
         role: payload.role,
       });
@@ -218,6 +222,7 @@ export class AuthService {
       user: {
         id: payload.sub,
         email: payload.email,
+        name: payload.name ?? null,
       },
       organization: {
         id: payload.orgId,
