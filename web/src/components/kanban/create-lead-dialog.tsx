@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -43,6 +44,7 @@ export function CreateLeadDialog({
   const [contactPhone, setContactPhone] = useState('');
   const [contractCount, setContractCount] = useState('');
   const [billingMode, setBillingMode] = useState('');
+  const [observations, setObservations] = useState('');
 
   function reset() {
     setCompanyName('');
@@ -50,6 +52,7 @@ export function CreateLeadDialog({
     setContactPhone('');
     setContractCount('');
     setBillingMode('');
+    setObservations('');
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -73,10 +76,11 @@ export function CreateLeadDialog({
 
       const newLeadId = res.data?.data?.id;
 
-      if ((billingMode || contractCount) && newLeadId) {
+      if ((billingMode || contractCount || observations.trim()) && newLeadId) {
         const parts = [];
         if (contractCount) parts.push(`Média de contratos/mês: ${contractCount}`);
         if (billingMode) parts.push(`Modo de cobrança: ${billingMode}`);
+        if (observations.trim()) parts.push(`Observações: ${observations.trim()}`);
         await api.post(`/leads/${newLeadId}/notes`, {
           content: parts.join('\n'),
           isPinned: true,
@@ -159,6 +163,16 @@ export function CreateLeadDialog({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="observations">Observações</Label>
+            <Textarea
+              id="observations"
+              value={observations}
+              onChange={(e) => setObservations(e.target.value)}
+              placeholder="Informações adicionais sobre o lead..."
+              rows={3}
+            />
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => { reset(); onOpenChange(false); }}>
