@@ -28,7 +28,7 @@ interface CreateLeadDialogProps {
   onCreated: () => void;
 }
 
-const BILLING_MODES = ['Mensal', 'Trimestral', 'Semestral', 'Anual', 'Avulso'];
+const BILLING_MODES = ['Pagamento prévio', 'Porcentagem', 'Misto (prévio + porcentagem)'];
 
 export function CreateLeadDialog({
   open,
@@ -41,14 +41,14 @@ export function CreateLeadDialog({
   const [companyName, setCompanyName] = useState('');
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
-  const [estimatedValue, setEstimatedValue] = useState('');
+  const [contractCount, setContractCount] = useState('');
   const [billingMode, setBillingMode] = useState('');
 
   function reset() {
     setCompanyName('');
     setContactName('');
     setContactPhone('');
-    setEstimatedValue('');
+    setContractCount('');
     setBillingMode('');
   }
 
@@ -68,15 +68,17 @@ export function CreateLeadDialog({
         contactName: contactName.trim() || undefined,
         contactPhone: contactPhone.trim() || undefined,
         companyName: companyName.trim() || undefined,
-        estimatedValue: estimatedValue ? Math.round(parseFloat(estimatedValue) * 100) : undefined,
         statusId,
       });
 
       const newLeadId = res.data?.data?.id;
 
-      if (billingMode && newLeadId) {
+      if ((billingMode || contractCount) && newLeadId) {
+        const parts = [];
+        if (contractCount) parts.push(`Média de contratos/mês: ${contractCount}`);
+        if (billingMode) parts.push(`Modo de cobrança: ${billingMode}`);
         await api.post(`/leads/${newLeadId}/notes`, {
-          content: `Modo de cobrança: ${billingMode}`,
+          content: parts.join('\n'),
           isPinned: true,
         });
       }
@@ -130,15 +132,15 @@ export function CreateLeadDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="estimatedValue">Média de contrato/mês (R$)</Label>
+            <Label htmlFor="contractCount">Média de contratos/mês</Label>
             <Input
-              id="estimatedValue"
+              id="contractCount"
               type="number"
-              step="0.01"
+              step="1"
               min="0"
-              value={estimatedValue}
-              onChange={(e) => setEstimatedValue(e.target.value)}
-              placeholder="Ex: 2500.00"
+              value={contractCount}
+              onChange={(e) => setContractCount(e.target.value)}
+              placeholder="Ex: 10"
             />
           </div>
           <div className="space-y-2">
