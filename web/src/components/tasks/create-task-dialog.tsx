@@ -138,7 +138,7 @@ export function CreateTaskDialog({
           {/* Task type */}
           <div className="space-y-2">
             <Label>Tipo</Label>
-            <Select value={type} onValueChange={setType}>
+            <Select value={type} onValueChange={(v) => setType(v ?? 'CALL')}>
               <SelectTrigger>
                 <span className="text-sm">
                   {TASK_TYPES.find((t) => t.value === type)?.label}
