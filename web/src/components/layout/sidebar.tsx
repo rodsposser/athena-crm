@@ -11,6 +11,7 @@ import {
   Kanban,
   ChevronDown,
   Bell,
+  CalendarCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
@@ -72,6 +73,20 @@ export function Sidebar() {
         >
           <LayoutDashboard className="h-4 w-4" />
           Dashboard
+        </Link>
+
+        {/* Tasks */}
+        <Link
+          href="/tasks"
+          className={cn(
+            'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+            pathname.startsWith('/tasks')
+              ? 'bg-sidebar-accent text-sidebar-primary'
+              : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground',
+          )}
+        >
+          <CalendarCheck className="h-4 w-4" />
+          Tarefas
         </Link>
 
         {/* Pipelines section */}

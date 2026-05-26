@@ -23,6 +23,7 @@ import { WebhooksModule } from './modules/webhooks/webhooks.module';
 import { ApiKeysModule } from './modules/api-keys/api-keys.module';
 import { LeadTrackingModule } from './modules/lead-tracking/lead-tracking.module';
 import { PublicApiModule } from './modules/public-api/public-api.module';
+import { ScheduledTasksModule } from './modules/scheduled-tasks/scheduled-tasks.module';
 import { validateEnv } from './common/config/env.validation';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { OrgMemberGuard } from './common/guards/org-member.guard';
@@ -57,6 +58,7 @@ import { HealthController } from './health.controller';
     ApiKeysModule,
     LeadTrackingModule,
     PublicApiModule,
+    ScheduledTasksModule,
   ],
   controllers: [HealthController],
   providers: [

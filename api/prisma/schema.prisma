@@ -57,6 +57,7 @@ model User {
   notes                  Note[]                   @relation("NoteUser")
   assignedTasks          LeadTask[]               @relation("TaskAssignee")
   createdTasks           LeadTask[]               @relation("TaskCreator")
+  scheduledTasksCreated  ScheduledTask[]          @relation("ScheduledTaskCreator")
   attachments            Attachment[]             @relation("AttachmentUser")
   notifications          Notification[]           @relation("NotificationRecipient")
   notificationPreferences NotificationPreference[] @relation("NotificationPreference")
@@ -139,7 +140,8 @@ model PipelineStatus {
   pipeline        Pipeline         @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
   transitionsFrom TransitionRule[] @relation("FromStatus")
   transitionsTo   TransitionRule[] @relation("ToStatus")
-  leads           Lead[]
+  leads               Lead[]
+  scheduledTaskMoves  ScheduledTask[]
 
   @@index([pipelineId, position])
   @@map("pipeline_statuses")
@@ -257,6 +259,7 @@ model Lead {
   attachments      Attachment[]
   tracking         LeadTracking?
   score            LeadScore?
+  scheduledTasks   ScheduledTask[]
 
   @@index([organizationId, pipelineId, statusId, deletedAt])
   @@index([organizationId, assigneeId, deletedAt])
@@ -392,6 +395,19 @@ model LeadSource {
 
 // ─── Engagement ─────────────────────────────────────────────
 
+enum ScheduledTaskType {
+  CALL
+  MEETING
+  CALLBACK
+  EMAIL
+}
+
+enum ScheduledTaskStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
 enum ActivityType {
   CREATED
   STATUS_CHANGED
@@ -461,6 +477,30 @@ model LeadTask {
   @@index([leadId])
   @@index([assigneeId, completedAt, dueDate])
   @@map("lead_tasks")
+}
+
+model ScheduledTask {
+  id              String               @id @default(cuid())
+  organizationId  String               @map("organization_id")
+  leadId          String               @map("lead_id")
+  createdById     String               @map("created_by_id")
+  type            ScheduledTaskType
+  scheduledAt     DateTime             @map("scheduled_at")
+  completedAt     DateTime?            @map("completed_at")
+  status          ScheduledTaskStatus  @default(PENDING)
+  notes           String?
+  outcome         String?
+  movedToStatusId String?              @map("moved_to_status_id")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+
+  lead          Lead            @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  createdBy     User            @relation("ScheduledTaskCreator", fields: [createdById], references: [id])
+  movedToStatus PipelineStatus? @relation(fields: [movedToStatusId], references: [id])
+
+  @@index([organizationId, scheduledAt])
+  @@index([leadId])
+  @@map("scheduled_tasks")
 }
 
 model Attachment {

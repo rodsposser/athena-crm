@@ -32,6 +32,7 @@ const webhooks_module_1 = require("./modules/webhooks/webhooks.module");
 const api_keys_module_1 = require("./modules/api-keys/api-keys.module");
 const lead_tracking_module_1 = require("./modules/lead-tracking/lead-tracking.module");
 const public_api_module_1 = require("./modules/public-api/public-api.module");
+const scheduled_tasks_module_1 = require("./modules/scheduled-tasks/scheduled-tasks.module");
 const env_validation_1 = require("./common/config/env.validation");
 const jwt_auth_guard_1 = require("./common/guards/jwt-auth.guard");
 const org_member_guard_1 = require("./common/guards/org-member.guard");
@@ -69,6 +70,7 @@ exports.AppModule = AppModule = __decorate([
             api_keys_module_1.ApiKeysModule,
             lead_tracking_module_1.LeadTrackingModule,
             public_api_module_1.PublicApiModule,
+            scheduled_tasks_module_1.ScheduledTasksModule,
         ],
         controllers: [health_controller_1.HealthController],
         providers: [
