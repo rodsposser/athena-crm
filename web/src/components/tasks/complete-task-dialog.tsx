@@ -60,7 +60,7 @@ const TYPE_LABELS: Record<string, string> = {
 export function CompleteTaskDialog({ task, onClose, onCompleted }: CompleteTaskDialogProps) {
   const [loading, setLoading] = useState(false);
   const [outcome, setOutcome] = useState('');
-  const [moveToStatusId, setMoveToStatusId] = useState('__keep__');
+  const [moveToStatusId, setMoveToStatusId] = useState<string>('__keep__');
   const [statuses, setStatuses] = useState<Status[]>([]);
 
   useEffect(() => {
@@ -171,7 +171,7 @@ export function CompleteTaskDialog({ task, onClose, onCompleted }: CompleteTaskD
           {/* Move to status */}
           <div className="space-y-2">
             <Label>Mover lead para etapa</Label>
-            <Select value={moveToStatusId} onValueChange={setMoveToStatusId}>
+            <Select value={moveToStatusId} onValueChange={(v) => setMoveToStatusId(v ?? '__keep__')}>
               <SelectTrigger>
                 <span className="text-sm">
                   {moveToStatusId === '__keep__'
