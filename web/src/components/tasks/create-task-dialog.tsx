@@ -63,7 +63,7 @@ export function CreateTaskDialog({
   const [selectedLead, setSelectedLead] = useState<LeadResult | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>();
+  const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     if (defaultDate) setDate(defaultDate);
