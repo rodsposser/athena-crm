@@ -59,12 +59,49 @@ export function CreateTaskDialog({
   const [notes, setNotes] = useState('');
 
   const [search, setSearch] = useState('');
-  const [results, setResults] = useState<LeadResult[]>([]);
+  const [allLeads, setAllLeads] = useState<LeadResult[]>([]);
   const [selectedLead, setSelectedLead] = useState<LeadResult | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [searching, setSearching] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // Pre-load leads from all pipelines when dialog opens
+  useEffect(() => {
+    if (!open) return;
+    setSearching(true);
+    api.get('/pipelines').then(async (res) => {
+      const pipelines: { id: string }[] = res.data.data ?? res.data ?? [];
+      const perPipeline = await Promise.all(
+        pipelines.map((p) =>
+          api.get(`/pipelines/${p.id}/leads`, { params: { limit: 200 } })
+            .then((r) => (r.data.data ?? r.data ?? []) as LeadResult[])
+            .catch(() => [] as LeadResult[])
+        )
+      );
+      const seen = new Set<string>();
+      const merged: LeadResult[] = [];
+      for (const list of perPipeline) {
+        for (const lead of list) {
+          if (!seen.has(lead.id)) { seen.add(lead.id); merged.push(lead); }
+        }
+      }
+      setAllLeads(merged);
+    }).catch(() => {}).finally(() => setSearching(false));
+  }, [open]);
+
+  // Filter client-side as user types, fallback to server search for longer queries
+  const filtered = search.length === 0
+    ? allLeads.slice(0, 8)
+    : allLeads.filter((l) => {
+        const q = search.toLowerCase();
+        return (
+          l.title?.toLowerCase().includes(q) ||
+          l.company?.name?.toLowerCase().includes(q) ||
+          l.contact?.name?.toLowerCase().includes(q) ||
+          l.contact?.phone?.includes(q)
+        );
+      }).slice(0, 10);
 
   useEffect(() => {
     if (defaultDate) setDate(defaultDate);
@@ -81,23 +118,35 @@ export function CreateTaskDialog({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Server search fallback for longer queries not matched locally
   useEffect(() => {
-    if (!search || selectedLead) return;
+    if (!search || selectedLead || allLeads.length > 0) return;
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await api.get('/scheduled-tasks/leads/search', { params: { q: search } });
-        setResults(res.data.data ?? res.data ?? []);
-        setShowDropdown(true);
-      } catch {
-        setResults([]);
-        setShowDropdown(true);
+        const pRes = await api.get('/pipelines');
+        const pipelines: { id: string }[] = pRes.data.data ?? pRes.data ?? [];
+        const perPipeline = await Promise.all(
+          pipelines.map((p) =>
+            api.get(`/pipelines/${p.id}/leads`, { params: { search, limit: 10 } })
+              .then((r) => (r.data.data ?? r.data ?? []) as LeadResult[])
+              .catch(() => [] as LeadResult[])
+          )
+        );
+        const seen = new Set<string>();
+        const merged: LeadResult[] = [];
+        for (const list of perPipeline) {
+          for (const lead of list) {
+            if (!seen.has(lead.id)) { seen.add(lead.id); merged.push(lead); }
+          }
+        }
+        setAllLeads(merged);
       } finally {
         setSearching(false);
       }
-    }, 300);
-  }, [search, selectedLead]);
+    }, 400);
+  }, [search, selectedLead, allLeads.length]);
 
   function reset() {
     setType('CALL');
@@ -106,7 +155,7 @@ export function CreateTaskDialog({
     setNotes('');
     setSearch('');
     setSelectedLead(null);
-    setResults([]);
+    setAllLeads([]);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -221,44 +270,51 @@ export function CreateTaskDialog({
             ) : (
               <div ref={searchRef} className="relative">
                 <Input
-                  placeholder="Buscar lead por nome ou empresa..."
+                  placeholder="Digite para buscar..."
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  onFocus={() => results.length > 0 && setShowDropdown(true)}
+                  onChange={(e) => { setSearch(e.target.value); setShowDropdown(true); }}
+                  onFocus={() => setShowDropdown(true)}
                   autoComplete="off"
                 />
                 {searching && (
                   <p className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                    buscando...
+                    carregando...
                   </p>
                 )}
-                {showDropdown && results.length > 0 && (
+                {showDropdown && !searching && (
                   <div className="absolute z-50 w-full mt-1 rounded-lg border bg-popover shadow-md max-h-56 overflow-y-auto">
-                    {results.map((lead) => (
-                      <button
-                        key={lead.id}
-                        type="button"
-                        className="w-full text-left px-3 py-2 hover:bg-accent text-sm"
-                        onClick={() => {
-                          setSelectedLead(lead);
-                          setSearch('');
-                          setShowDropdown(false);
-                        }}
-                      >
-                        <p className="font-medium">{lead.company?.name || lead.title}</p>
-                        {lead.contact && (
+                    {filtered.length > 0 ? (
+                      filtered.map((lead) => (
+                        <button
+                          key={lead.id}
+                          type="button"
+                          className="w-full text-left px-3 py-2 hover:bg-accent text-sm border-b last:border-0"
+                          onClick={() => {
+                            setSelectedLead(lead);
+                            setSearch('');
+                            setShowDropdown(false);
+                          }}
+                        >
+                          <p className="font-medium">{lead.company?.name || lead.title}</p>
                           <p className="text-xs text-muted-foreground">
-                            {lead.contact.name}
-                            {lead.contact.phone && ` · ${lead.contact.phone}`}
+                            {lead.contact?.name && `${lead.contact.name}`}
+                            {lead.contact?.phone && ` · ${lead.contact.phone}`}
+                            {lead.status?.name && (
+                              <span className="ml-1">
+                                · <span
+                                  className="inline-block size-1.5 rounded-full align-middle"
+                                  style={{ backgroundColor: lead.status.color }}
+                                /> {lead.status.name}
+                              </span>
+                            )}
                           </p>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {showDropdown && results.length === 0 && search.length >= 2 && !searching && (
-                  <div className="absolute z-50 w-full mt-1 rounded-lg border bg-popover shadow-md px-3 py-2 text-sm text-muted-foreground">
-                    Nenhum lead encontrado para &quot;{search}&quot;
+                        </button>
+                      ))
+                    ) : (
+                      <p className="px-3 py-2 text-sm text-muted-foreground">
+                        {search.length > 0 ? `Nenhum resultado para "${search}"` : 'Nenhum lead encontrado'}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
