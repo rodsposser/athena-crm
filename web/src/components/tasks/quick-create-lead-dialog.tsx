@@ -147,7 +147,7 @@ export function QuickCreateLeadDialog({ open, onOpenChange, onCreated }: QuickCr
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Pipeline *</Label>
-              <Select value={selectedPipelineId} onValueChange={handlePipelineChange}>
+              <Select value={selectedPipelineId} onValueChange={(v) => handlePipelineChange(v ?? '')}>
                 <SelectTrigger>
                   <span className="text-sm truncate">
                     {pipelines.find((p) => p.id === selectedPipelineId)?.name ?? 'Selecionar...'}
