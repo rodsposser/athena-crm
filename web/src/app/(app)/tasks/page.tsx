@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { CreateTaskDialog } from '@/components/tasks/create-task-dialog';
 import { CompleteTaskDialog } from '@/components/tasks/complete-task-dialog';
+import { QuickCreateLeadDialog } from '@/components/tasks/quick-create-lead-dialog';
 import api from '@/lib/api';
 
 /* ---------- types ---------- */
@@ -102,6 +103,7 @@ export default function TasksPage() {
   const [createDefaultDate, setCreateDefaultDate] = useState<string>();
   const [createDefaultTime, setCreateDefaultTime] = useState<string>();
   const [selectedTask, setSelectedTask] = useState<ScheduledTask | null>(null);
+  const [createLeadOpen, setCreateLeadOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -161,10 +163,16 @@ export default function TasksPage() {
           <h1 className="text-2xl font-bold">Tarefas</h1>
           <p className="text-sm text-muted-foreground">Calendário de atividades de prospecção</p>
         </div>
-        <Button onClick={() => { setCreateDefaultDate(today); setCreateDefaultTime('09:00'); setCreateOpen(true); }}>
-          <Plus className="mr-1.5 size-4" />
-          Nova Tarefa
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setCreateLeadOpen(true)}>
+            <Plus className="mr-1.5 size-4" />
+            Criar Lead
+          </Button>
+          <Button onClick={() => { setCreateDefaultDate(today); setCreateDefaultTime('09:00'); setCreateOpen(true); }}>
+            <Plus className="mr-1.5 size-4" />
+            Nova Tarefa
+          </Button>
+        </div>
       </div>
 
       {/* Metrics */}
@@ -320,6 +328,12 @@ export default function TasksPage() {
         task={selectedTask}
         onClose={() => setSelectedTask(null)}
         onCompleted={fetchData}
+      />
+
+      <QuickCreateLeadDialog
+        open={createLeadOpen}
+        onOpenChange={setCreateLeadOpen}
+        onCreated={() => {}}
       />
     </div>
   );

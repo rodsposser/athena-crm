@@ -62,6 +62,7 @@ export function CreateTaskDialog({
   const [results, setResults] = useState<LeadResult[]>([]);
   const [selectedLead, setSelectedLead] = useState<LeadResult | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [searching, setSearching] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -84,11 +85,17 @@ export function CreateTaskDialog({
     if (!search || selectedLead) return;
     clearTimeout(searchTimer.current);
     searchTimer.current = setTimeout(async () => {
+      setSearching(true);
       try {
         const res = await api.get('/scheduled-tasks/leads/search', { params: { q: search } });
-        setResults(res.data.data ?? res.data);
+        setResults(res.data.data ?? res.data ?? []);
         setShowDropdown(true);
-      } catch { /* ignore */ }
+      } catch {
+        setResults([]);
+        setShowDropdown(true);
+      } finally {
+        setSearching(false);
+      }
     }, 300);
   }, [search, selectedLead]);
 
@@ -214,12 +221,17 @@ export function CreateTaskDialog({
             ) : (
               <div ref={searchRef} className="relative">
                 <Input
-                  placeholder="Buscar lead..."
+                  placeholder="Buscar lead por nome ou empresa..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   onFocus={() => results.length > 0 && setShowDropdown(true)}
                   autoComplete="off"
                 />
+                {searching && (
+                  <p className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                    buscando...
+                  </p>
+                )}
                 {showDropdown && results.length > 0 && (
                   <div className="absolute z-50 w-full mt-1 rounded-lg border bg-popover shadow-md max-h-56 overflow-y-auto">
                     {results.map((lead) => (
@@ -244,9 +256,9 @@ export function CreateTaskDialog({
                     ))}
                   </div>
                 )}
-                {showDropdown && results.length === 0 && search.length >= 2 && (
+                {showDropdown && results.length === 0 && search.length >= 2 && !searching && (
                   <div className="absolute z-50 w-full mt-1 rounded-lg border bg-popover shadow-md px-3 py-2 text-sm text-muted-foreground">
-                    Nenhum lead encontrado
+                    Nenhum lead encontrado para &quot;{search}&quot;
                   </div>
                 )}
               </div>
