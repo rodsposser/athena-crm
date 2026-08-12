@@ -10,6 +10,7 @@ exports.PublicApiModule = void 0;
 const common_1 = require("@nestjs/common");
 const public_api_controller_1 = require("./public-api.controller");
 const webhook_debug_controller_1 = require("./webhook-debug.controller");
+const scheduling_webhook_controller_1 = require("./scheduling-webhook.controller");
 const api_keys_module_1 = require("../api-keys/api-keys.module");
 const lead_tracking_module_1 = require("../lead-tracking/lead-tracking.module");
 let PublicApiModule = class PublicApiModule {
@@ -18,7 +19,7 @@ exports.PublicApiModule = PublicApiModule;
 exports.PublicApiModule = PublicApiModule = __decorate([
     (0, common_1.Module)({
         imports: [api_keys_module_1.ApiKeysModule, lead_tracking_module_1.LeadTrackingModule],
-        controllers: [public_api_controller_1.PublicApiController, webhook_debug_controller_1.WebhookDebugController],
+        controllers: [public_api_controller_1.PublicApiController, webhook_debug_controller_1.WebhookDebugController, scheduling_webhook_controller_1.SchedulingWebhookController],
     })
 ], PublicApiModule);
 //# sourceMappingURL=public-api.module.js.map
