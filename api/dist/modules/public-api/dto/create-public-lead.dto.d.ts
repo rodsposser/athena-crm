@@ -5,6 +5,7 @@ export declare class CreatePublicLeadDto {
     company?: string;
     pipelineId: string;
     sourceId?: string;
+    statusName?: string;
     utm_source?: string;
     utm_medium?: string;
     utm_campaign?: string;

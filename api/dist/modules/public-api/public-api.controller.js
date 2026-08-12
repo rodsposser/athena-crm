@@ -30,11 +30,22 @@ let PublicApiController = class PublicApiController {
     }
     async createLead(dto, req) {
         const orgId = req.user.orgId;
-        const defaultStatus = await this.prisma.pipelineStatus.findFirst({
-            where: { pipelineId: dto.pipelineId, isDefault: true },
-        });
+        const targetStatus = dto.statusName
+            ? await this.prisma.pipelineStatus.findFirst({
+                where: {
+                    pipelineId: dto.pipelineId,
+                    name: { equals: dto.statusName, mode: 'insensitive' },
+                },
+            })
+            : null;
+        const defaultStatus = targetStatus ??
+            (await this.prisma.pipelineStatus.findFirst({
+                where: { pipelineId: dto.pipelineId, isDefault: true },
+            }));
         if (!defaultStatus) {
-            throw new common_1.BadRequestException('Pipeline not found or has no default status');
+            throw new common_1.BadRequestException(dto.statusName
+                ? `Etapa "${dto.statusName}" não encontrada nesse pipeline (e o pipeline também não tem etapa padrão)`
+                : 'Pipeline not found or has no default status');
         }
         const maxPos = await this.prisma.lead.aggregate({
             where: { statusId: defaultStatus.id, deletedAt: null },
