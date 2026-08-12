@@ -25,6 +25,14 @@ export class CreatePublicLeadDto {
   @IsOptional()
   sourceId?: string;
 
+  // Nome de uma etapa do pipeline (ex: "Reunião Agendada") — quando informado,
+  // o lead entra direto nela em vez de cair sempre na etapa padrão. Útil pra
+  // webhooks de ferramentas externas que já sabem que o lead está qualificado
+  // (ex: agendou reunião), não precisando de um lead "cru" na primeira etapa.
+  @IsString()
+  @IsOptional()
+  statusName?: string;
+
   @IsString()
   @IsOptional()
   utm_source?: string;

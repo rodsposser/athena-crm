@@ -33,12 +33,30 @@ export class PublicApiController {
   async createLead(@Body() dto: CreatePublicLeadDto, @Req() req: any) {
     const orgId = (req as any).user.orgId;
 
-    // Validate pipeline exists and belongs to org
-    const defaultStatus = await this.prisma.pipelineStatus.findFirst({
-      where: { pipelineId: dto.pipelineId, isDefault: true },
-    });
+    // Se statusName vier preenchido, tenta cair direto naquela etapa (ex:
+    // webhook de agendamento que já sabe que o lead está qualificado) — senão,
+    // usa a etapa padrão do pipeline (fluxo original, entrada "crua").
+    const targetStatus = dto.statusName
+      ? await this.prisma.pipelineStatus.findFirst({
+          where: {
+            pipelineId: dto.pipelineId,
+            name: { equals: dto.statusName, mode: 'insensitive' },
+          },
+        })
+      : null;
+
+    const defaultStatus =
+      targetStatus ??
+      (await this.prisma.pipelineStatus.findFirst({
+        where: { pipelineId: dto.pipelineId, isDefault: true },
+      }));
+
     if (!defaultStatus) {
-      throw new BadRequestException('Pipeline not found or has no default status');
+      throw new BadRequestException(
+        dto.statusName
+          ? `Etapa "${dto.statusName}" não encontrada nesse pipeline (e o pipeline também não tem etapa padrão)`
+          : 'Pipeline not found or has no default status',
+      );
     }
 
     // Get max position
