@@ -75,6 +75,17 @@ export class SchedulingWebhookController {
       throw new BadRequestException('Configuração de organização/pipeline não encontrada');
     }
 
+    // Origem do lead: tenta casar com o utm_source recebido; sem isso, cai em
+    // "Meta Ads" (essa integração inteira existe pra campanha de Meta Ads).
+    const source =
+      (booking.utm_source &&
+        (await this.prisma.leadSource.findFirst({
+          where: { organizationId: org.id, name: { contains: booking.utm_source, mode: 'insensitive' } },
+        }))) ||
+      (await this.prisma.leadSource.findFirst({
+        where: { organizationId: org.id, name: { equals: 'Meta Ads', mode: 'insensitive' } },
+      }));
+
     const result = await this.prisma.$transaction(async (tx) => {
       let contactId: string | undefined;
       if (booking.email) {
@@ -107,6 +118,7 @@ export class SchedulingWebhookController {
           statusId: status.id,
           title: booking.name!,
           contactId,
+          sourceId: source?.id,
           position: (maxPos._max.position ?? -1) + 1,
           temperature: 'HOT',
         },
@@ -127,14 +139,31 @@ export class SchedulingWebhookController {
         ? new Date(booking.scheduled_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
         : 'horário não informado';
 
+      // Nota curta pra rastreabilidade (também serve de marca de idempotência,
+      // ver checagem de dedupe acima).
       await tx.note.create({
         data: {
           leadId: lead.id,
           userId: owner.id,
-          content: `Reunião agendada automaticamente via webhook (booking ${booking.id}) para ${scheduled}.${booking.notes ? `\nObservações do lead: ${booking.notes}` : ''}`,
-          isPinned: true,
+          content: `Reunião agendada automaticamente via webhook (booking ${booking.id}).`,
+          isPinned: false,
         },
       });
+
+      // Tarefa de verdade, aparece no calendário da aba Planning — é o que
+      // realmente avisa o Closer do horário marcado.
+      if (booking.scheduled_at) {
+        await tx.scheduledTask.create({
+          data: {
+            organizationId: org.id,
+            leadId: lead.id,
+            createdById: owner.id,
+            type: 'MEETING',
+            scheduledAt: new Date(booking.scheduled_at),
+            notes: booking.notes ?? `Reunião agendada via formulário — ${scheduled}.`,
+          },
+        });
+      }
 
       return lead;
     });

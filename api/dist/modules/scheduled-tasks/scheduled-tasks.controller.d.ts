@@ -72,8 +72,8 @@ export declare class ScheduledTasksController {
         completedAt: Date | null;
         scheduledAt: Date;
         outcome: string | null;
-        movedToStatusId: string | null;
         createdById: string;
+        movedToStatusId: string | null;
     })[]>;
     findMetrics(orgId: string, date: string): Promise<{
         callsToday: number;
@@ -192,8 +192,8 @@ export declare class ScheduledTasksController {
         completedAt: Date | null;
         scheduledAt: Date;
         outcome: string | null;
-        movedToStatusId: string | null;
         createdById: string;
+        movedToStatusId: string | null;
     }>;
     complete(orgId: string, id: string, dto: CompleteScheduledTaskDto): Promise<{
         lead: {
@@ -262,8 +262,8 @@ export declare class ScheduledTasksController {
         completedAt: Date | null;
         scheduledAt: Date;
         outcome: string | null;
-        movedToStatusId: string | null;
         createdById: string;
+        movedToStatusId: string | null;
     }>;
     cancel(orgId: string, id: string): Promise<{
         lead: {
@@ -332,8 +332,8 @@ export declare class ScheduledTasksController {
         completedAt: Date | null;
         scheduledAt: Date;
         outcome: string | null;
-        movedToStatusId: string | null;
         createdById: string;
+        movedToStatusId: string | null;
     }>;
     remove(orgId: string, id: string): Promise<{
         id: string;
@@ -347,7 +347,7 @@ export declare class ScheduledTasksController {
         completedAt: Date | null;
         scheduledAt: Date;
         outcome: string | null;
-        movedToStatusId: string | null;
         createdById: string;
+        movedToStatusId: string | null;
     }>;
 }

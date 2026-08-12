@@ -49,6 +49,13 @@ let SchedulingWebhookController = class SchedulingWebhookController {
         if (!org || !owner || !status) {
             throw new common_1.BadRequestException('Configuração de organização/pipeline não encontrada');
         }
+        const source = (booking.utm_source &&
+            (await this.prisma.leadSource.findFirst({
+                where: { organizationId: org.id, name: { contains: booking.utm_source, mode: 'insensitive' } },
+            }))) ||
+            (await this.prisma.leadSource.findFirst({
+                where: { organizationId: org.id, name: { equals: 'Meta Ads', mode: 'insensitive' } },
+            }));
         const result = await this.prisma.$transaction(async (tx) => {
             let contactId;
             if (booking.email) {
@@ -79,6 +86,7 @@ let SchedulingWebhookController = class SchedulingWebhookController {
                     statusId: status.id,
                     title: booking.name,
                     contactId,
+                    sourceId: source?.id,
                     position: (maxPos._max.position ?? -1) + 1,
                     temperature: 'HOT',
                 },
@@ -100,10 +108,22 @@ let SchedulingWebhookController = class SchedulingWebhookController {
                 data: {
                     leadId: lead.id,
                     userId: owner.id,
-                    content: `Reunião agendada automaticamente via webhook (booking ${booking.id}) para ${scheduled}.${booking.notes ? `\nObservações do lead: ${booking.notes}` : ''}`,
-                    isPinned: true,
+                    content: `Reunião agendada automaticamente via webhook (booking ${booking.id}).`,
+                    isPinned: false,
                 },
             });
+            if (booking.scheduled_at) {
+                await tx.scheduledTask.create({
+                    data: {
+                        organizationId: org.id,
+                        leadId: lead.id,
+                        createdById: owner.id,
+                        type: 'MEETING',
+                        scheduledAt: new Date(booking.scheduled_at),
+                        notes: booking.notes ?? `Reunião agendada via formulário — ${scheduled}.`,
+                    },
+                });
+            }
             return lead;
         });
         return { ok: true, leadId: result.id };
