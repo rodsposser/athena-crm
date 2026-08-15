@@ -15,6 +15,11 @@ import { Public } from '../../common/decorators/public.decorator';
 const PIPELINE_ID = 'cmsqki0uc000c4g37fmvlfpr3';
 const TARGET_STATUS_NAME = 'Reunião Agendada';
 
+// Avisa o Closer no WhatsApp (via n8n → Evolution API) quando uma reunião é
+// agendada. Falha nesse aviso nunca deve derrubar a criação do lead — é
+// só-melhor-esforço, por isso fica isolado e sempre dentro de um try/catch.
+const N8N_NOTIFY_URL = 'https://abelerosa-n8n.ujnljw.easypanel.host/webhook/athena-reuniao-agendada';
+
 interface BookingPayload {
   event?: string;
   booking?: {
@@ -86,6 +91,10 @@ export class SchedulingWebhookController {
         where: { organizationId: org.id, name: { equals: 'Meta Ads', mode: 'insensitive' } },
       }));
 
+    const scheduled = booking.scheduled_at
+      ? new Date(booking.scheduled_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+      : 'horário não informado';
+
     const result = await this.prisma.$transaction(async (tx) => {
       let contactId: string | undefined;
       if (booking.email) {
@@ -135,10 +144,6 @@ export class SchedulingWebhookController {
         });
       }
 
-      const scheduled = booking.scheduled_at
-        ? new Date(booking.scheduled_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-        : 'horário não informado';
-
       // Nota curta pra rastreabilidade (também serve de marca de idempotência,
       // ver checagem de dedupe acima).
       await tx.note.create({
@@ -167,6 +172,22 @@ export class SchedulingWebhookController {
 
       return lead;
     });
+
+    try {
+      await fetch(N8N_NOTIFY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: booking.name,
+          email: booking.email ?? '',
+          phone: booking.phone ?? '',
+          scheduled_at: scheduled,
+          notes: booking.notes ?? '',
+        }),
+      });
+    } catch (err) {
+      console.error('[scheduling-webhook] falha ao avisar Closer no WhatsApp', err);
+    }
 
     return { ok: true, leadId: result.id };
   }

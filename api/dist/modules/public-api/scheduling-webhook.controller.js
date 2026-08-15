@@ -18,6 +18,7 @@ const prisma_service_1 = require("../../prisma/prisma.service");
 const public_decorator_1 = require("../../common/decorators/public.decorator");
 const PIPELINE_ID = 'cmsqki0uc000c4g37fmvlfpr3';
 const TARGET_STATUS_NAME = 'Reunião Agendada';
+const N8N_NOTIFY_URL = 'https://abelerosa-n8n.ujnljw.easypanel.host/webhook/athena-reuniao-agendada';
 let SchedulingWebhookController = class SchedulingWebhookController {
     prisma;
     constructor(prisma) {
@@ -56,6 +57,9 @@ let SchedulingWebhookController = class SchedulingWebhookController {
             (await this.prisma.leadSource.findFirst({
                 where: { organizationId: org.id, name: { equals: 'Meta Ads', mode: 'insensitive' } },
             }));
+        const scheduled = booking.scheduled_at
+            ? new Date(booking.scheduled_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
+            : 'horário não informado';
         const result = await this.prisma.$transaction(async (tx) => {
             let contactId;
             if (booking.email) {
@@ -101,9 +105,6 @@ let SchedulingWebhookController = class SchedulingWebhookController {
                     },
                 });
             }
-            const scheduled = booking.scheduled_at
-                ? new Date(booking.scheduled_at).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })
-                : 'horário não informado';
             await tx.note.create({
                 data: {
                     leadId: lead.id,
@@ -126,6 +127,22 @@ let SchedulingWebhookController = class SchedulingWebhookController {
             }
             return lead;
         });
+        try {
+            await fetch(N8N_NOTIFY_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: booking.name,
+                    email: booking.email ?? '',
+                    phone: booking.phone ?? '',
+                    scheduled_at: scheduled,
+                    notes: booking.notes ?? '',
+                }),
+            });
+        }
+        catch (err) {
+            console.error('[scheduling-webhook] falha ao avisar Closer no WhatsApp', err);
+        }
         return { ok: true, leadId: result.id };
     }
 };
