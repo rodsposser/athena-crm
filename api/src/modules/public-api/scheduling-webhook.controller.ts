@@ -195,6 +195,16 @@ export class SchedulingWebhookController {
       return lead;
     });
 
+    // O payload do booking não traz as respostas do formulário — busca a nota
+    // que o form-webhook.controller.ts criou antes (se essa pessoa passou por
+    // lá) e extrai as respostas de dentro dela pra incluir no aviso.
+    const formNote = await this.prisma.note.findFirst({
+      where: { leadId: result.id, content: { startsWith: 'Formulário respondido' } },
+    });
+    const answers = formNote?.content.includes('Respostas:\n')
+      ? formNote.content.split('Respostas:\n')[1]
+      : 'Sem respostas de formulário registradas.';
+
     try {
       await fetch(N8N_NOTIFY_URL, {
         method: 'POST',
@@ -205,6 +215,7 @@ export class SchedulingWebhookController {
           phone: booking.phone ?? '',
           scheduled_at: scheduled,
           notes: booking.notes ?? '',
+          answers,
         }),
       });
     } catch (err) {

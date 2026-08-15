@@ -146,6 +146,12 @@ let SchedulingWebhookController = class SchedulingWebhookController {
             }
             return lead;
         });
+        const formNote = await this.prisma.note.findFirst({
+            where: { leadId: result.id, content: { startsWith: 'Formulário respondido' } },
+        });
+        const answers = formNote?.content.includes('Respostas:\n')
+            ? formNote.content.split('Respostas:\n')[1]
+            : 'Sem respostas de formulário registradas.';
         try {
             await fetch(N8N_NOTIFY_URL, {
                 method: 'POST',
@@ -156,6 +162,7 @@ let SchedulingWebhookController = class SchedulingWebhookController {
                     phone: booking.phone ?? '',
                     scheduled_at: scheduled,
                     notes: booking.notes ?? '',
+                    answers,
                 }),
             });
         }
