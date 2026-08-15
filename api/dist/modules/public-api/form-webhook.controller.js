@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
 const public_decorator_1 = require("../../common/decorators/public.decorator");
 const PIPELINE_ID = 'cmsqki0uc000c4g37fmvlfpr3';
+const N8N_NOTIFY_URL = 'https://abelerosa-n8n.ujnljw.easypanel.host/webhook/athena-formulario-respondido';
 let FormWebhookController = class FormWebhookController {
     prisma;
     constructor(prisma) {
@@ -56,6 +57,12 @@ let FormWebhookController = class FormWebhookController {
             (await this.prisma.leadSource.findFirst({
                 where: { organizationId: org.id, name: { equals: 'Meta Ads', mode: 'insensitive' } },
             }));
+        const answers = payload?.answers_map;
+        const answersText = answers
+            ? Object.entries(answers)
+                .map(([q, a]) => `- ${q.replace(/<[^>]+>/g, '')}: ${a}`)
+                .join('\n')
+            : '';
         const result = await this.prisma.$transaction(async (tx) => {
             let contactId;
             if (lead.phone) {
@@ -108,12 +115,6 @@ let FormWebhookController = class FormWebhookController {
                     },
                 });
             }
-            const answers = payload?.answers_map;
-            const answersText = answers
-                ? Object.entries(answers)
-                    .map(([q, a]) => `- ${q.replace(/<[^>]+>/g, '')}: ${a}`)
-                    .join('\n')
-                : '';
             await tx.note.create({
                 data: {
                     leadId: createdLead.id,
@@ -124,6 +125,20 @@ let FormWebhookController = class FormWebhookController {
             });
             return createdLead;
         });
+        try {
+            await fetch(N8N_NOTIFY_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: lead.name,
+                    phone: lead.phone ?? '',
+                    answers: answersText || 'Sem respostas registradas.',
+                }),
+            });
+        }
+        catch (err) {
+            console.error('[form-webhook] falha ao avisar Closer no WhatsApp', err);
+        }
         return { ok: true, leadId: result.id };
     }
 };

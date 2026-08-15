@@ -13,6 +13,11 @@ import { Public } from '../../common/decorators/public.decorator';
 // "Reunião Agendada" em vez de duplicar.
 const PIPELINE_ID = 'cmsqki0uc000c4g37fmvlfpr3';
 
+// Avisa o Closer no WhatsApp assim que o formulário é respondido (antes até
+// de agendar) — workflow separado do de reunião agendada, mensagem e n8n
+// endpoint próprios. Só-melhor-esforço, nunca derruba a criação do lead.
+const N8N_NOTIFY_URL = 'https://abelerosa-n8n.ujnljw.easypanel.host/webhook/athena-formulario-respondido';
+
 interface FormPayload {
   event?: string;
   lead?: {
@@ -78,6 +83,13 @@ export class FormWebhookController {
         where: { organizationId: org.id, name: { equals: 'Meta Ads', mode: 'insensitive' } },
       }));
 
+    const answers = payload?.answers_map;
+    const answersText = answers
+      ? Object.entries(answers)
+          .map(([q, a]) => `- ${q.replace(/<[^>]+>/g, '')}: ${a}`)
+          .join('\n')
+      : '';
+
     const result = await this.prisma.$transaction(async (tx) => {
       let contactId: string | undefined;
 
@@ -135,13 +147,6 @@ export class FormWebhookController {
         });
       }
 
-      const answers = payload?.answers_map;
-      const answersText = answers
-        ? Object.entries(answers)
-            .map(([q, a]) => `- ${q.replace(/<[^>]+>/g, '')}: ${a}`)
-            .join('\n')
-        : '';
-
       await tx.note.create({
         data: {
           leadId: createdLead.id,
@@ -153,6 +158,20 @@ export class FormWebhookController {
 
       return createdLead;
     });
+
+    try {
+      await fetch(N8N_NOTIFY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: lead.name,
+          phone: lead.phone ?? '',
+          answers: answersText || 'Sem respostas registradas.',
+        }),
+      });
+    } catch (err) {
+      console.error('[form-webhook] falha ao avisar Closer no WhatsApp', err);
+    }
 
     return { ok: true, leadId: result.id };
   }
