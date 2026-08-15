@@ -62,7 +62,13 @@ let SchedulingWebhookController = class SchedulingWebhookController {
             : 'horário não informado';
         const result = await this.prisma.$transaction(async (tx) => {
             let contactId;
-            if (booking.email) {
+            if (booking.phone) {
+                const existing = await tx.contact.findFirst({
+                    where: { organizationId: org.id, phone: booking.phone },
+                });
+                contactId = existing?.id;
+            }
+            if (!contactId && booking.email) {
                 const existing = await tx.contact.findFirst({
                     where: { organizationId: org.id, email: booking.email },
                 });
@@ -79,23 +85,36 @@ let SchedulingWebhookController = class SchedulingWebhookController {
                 });
                 contactId = created.id;
             }
-            const maxPos = await tx.lead.aggregate({
-                where: { statusId: status.id, deletedAt: null },
-                _max: { position: true },
+            const existingLead = await tx.lead.findFirst({
+                where: { organizationId: org.id, pipelineId: PIPELINE_ID, contactId, deletedAt: null },
+                orderBy: { createdAt: 'desc' },
             });
-            const lead = await tx.lead.create({
-                data: {
-                    organizationId: org.id,
-                    pipelineId: PIPELINE_ID,
-                    statusId: status.id,
-                    title: booking.name,
-                    contactId,
-                    sourceId: source?.id,
-                    position: (maxPos._max.position ?? -1) + 1,
-                    temperature: 'HOT',
-                },
-            });
-            if (booking.utm_source || booking.utm_medium || booking.utm_campaign) {
+            const lead = existingLead
+                ? await tx.lead.update({
+                    where: { id: existingLead.id },
+                    data: {
+                        statusId: status.id,
+                        temperature: 'HOT',
+                        sourceId: existingLead.sourceId ?? source?.id,
+                        lastStatusChangedAt: new Date(),
+                    },
+                })
+                : await tx.lead.create({
+                    data: {
+                        organizationId: org.id,
+                        pipelineId: PIPELINE_ID,
+                        statusId: status.id,
+                        title: booking.name,
+                        contactId,
+                        sourceId: source?.id,
+                        position: ((await tx.lead.aggregate({
+                            where: { statusId: status.id, deletedAt: null },
+                            _max: { position: true },
+                        }))._max.position ?? -1) + 1,
+                        temperature: 'HOT',
+                    },
+                });
+            if (!existingLead && (booking.utm_source || booking.utm_medium || booking.utm_campaign)) {
                 await tx.leadTracking.create({
                     data: {
                         leadId: lead.id,
